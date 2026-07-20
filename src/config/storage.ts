@@ -1,5 +1,10 @@
 // src/config/storage.ts
-import { STORAGE_ACCOUNT, CONTAINERS } from "./app";
+import { STORAGE_ACCOUNT } from "./app";
+
+export const CONTAINERS = {
+  data: "bakery-data",
+  images: "bakery-images",
+} as const;
 
 export interface StorageConfig {
   account: string;
