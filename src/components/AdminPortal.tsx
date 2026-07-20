@@ -27,7 +27,7 @@ import {
 } from "@/config/storage";
 import { STORAGE_ACCOUNT, SHOP_NAME } from "@/config/app";
 
-const ADMIN_PASSWORD_HASH = "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3"; // SHA-256 of "bakery123" — CHANGE THIS!
+const ADMIN_PASSWORD_HASH = "075d9fa1fce3c8dbee6dc1b04d7b51bd96f90016b849598c28ae0e01fcd1a701"; // SHA-256 of "bakery123" — CHANGE THIS!
 
 async function sha256(text: string): Promise<string> {
   const encoder = new TextEncoder();
