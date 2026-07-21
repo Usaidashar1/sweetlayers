@@ -14,14 +14,20 @@ export function useProductStore() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Load products from Azure Blob (or fallback to local)
+  // FIX: Always try cloud first with cache-busting, fallback to defaults
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const cloud = await fetchProductsFromCloud();
-      if (!cancelled) {
-        setProducts(cloud && cloud.length > 0 ? cloud : defaultProducts);
-        setLoading(false);
+      try {
+        const cloud = await fetchProductsFromCloud();
+        if (!cancelled) {
+          setProducts(cloud && cloud.length > 0 ? cloud : defaultProducts);
+        }
+      } catch (e) {
+        console.error("Load error:", e);
+        if (!cancelled) setProducts(defaultProducts);
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
     load();
