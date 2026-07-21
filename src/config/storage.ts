@@ -12,16 +12,24 @@ export interface StorageConfig {
 }
 
 export function getStorageConfig(): StorageConfig | null {
-  const raw = localStorage.getItem("bakery-admin-storage");
-  return raw ? JSON.parse(raw) : null;
+  try {
+    const raw = localStorage.getItem("bakery-admin-storage");
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
 }
 
 export function setStorageConfig(config: StorageConfig) {
-  localStorage.setItem("bakery-admin-storage", JSON.stringify(config));
+  try {
+    localStorage.setItem("bakery-admin-storage", JSON.stringify(config));
+  } catch {}
 }
 
 export function clearStorageConfig() {
-  localStorage.removeItem("bakery-admin-storage");
+  try {
+    localStorage.removeItem("bakery-admin-storage");
+  } catch {}
 }
 
 export function getImageUrl(blobName: string): string {
@@ -58,15 +66,21 @@ export async function uploadBlob(
   }
 }
 
+// FIX: Added cache-busting so we always get the latest products.json
 export async function fetchProductsFromCloud(): Promise<any[] | null> {
   try {
+    const cacheBuster = Date.now();
     const res = await fetch(
-      `https://${STORAGE_ACCOUNT}.blob.core.windows.net/${CONTAINERS.data}/products.json`,
+      `https://${STORAGE_ACCOUNT}.blob.core.windows.net/${CONTAINERS.data}/products.json?cb=${cacheBuster}`,
       { cache: "no-store" }
     );
-    if (!res.ok) return null;
+    if (!res.ok) {
+      console.log("products.json not found in cloud, using defaults");
+      return null;
+    }
     return await res.json();
-  } catch {
+  } catch (err) {
+    console.error("Failed to fetch products:", err);
     return null;
   }
 }
