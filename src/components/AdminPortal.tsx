@@ -1,4 +1,3 @@
-// src/components/AdminPortal.tsx
 import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -46,7 +45,8 @@ async function uploadBlob(container: string, blobName: string, file: File | stri
 
 async function fetchProductsFromCloud(): Promise<any[] | null> {
   try {
-    const res = await fetch(`https://${STORAGE_ACCOUNT}.blob.core.windows.net/${CONTAINERS.data}/products.json`, { cache: "no-store" });
+    const cacheBuster = Date.now();
+    const res = await fetch(`https://${STORAGE_ACCOUNT}.blob.core.windows.net/${CONTAINERS.data}/products.json?cb=${cacheBuster}`, { cache: "no-store" });
     if (!res.ok) return null;
     return await res.json();
   } catch { return null; }
@@ -84,11 +84,7 @@ function ErrorFallback({ error, reset }: { error: Error; reset: () => void }) {
 
 export function AdminPortal() {
   const [error, setError] = useState<Error | null>(null);
-
-  if (error) {
-    return <ErrorFallback error={error} reset={() => setError(null)} />;
-  }
-
+  if (error) return <ErrorFallback error={error} reset={() => setError(null)} />;
   return <AdminPortalInner onError={setError} />;
 }
 
@@ -127,10 +123,10 @@ function AdminPortalInner({ onError }: { onError: (e: Error) => void }) {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Safe init
   useEffect(() => {
-    setConfigState(getStorageConfig());
-    setSasInput(getStorageConfig()?.sasToken ?? "");
+    const cfg = getStorageConfig();
+    setConfigState(cfg);
+    setSasInput(cfg?.sasToken ?? "");
     async function load() {
       try {
         const cloud = await fetchProductsFromCloud();
@@ -163,11 +159,12 @@ function AdminPortalInner({ onError }: { onError: (e: Error) => void }) {
     if (localStorage.getItem("bakery-admin-auth") === "1") setIsAuthenticated(true);
   }, []);
 
+  // FIX: Don't clear SAS token on logout!
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.removeItem("bakery-admin-auth");
-    clearStorageConfig();
-    setConfigState(null);
+    // Keep storage config (SAS token) so it's still there on next login
+    setConfigState(getStorageConfig());
   };
 
   const resetForm = useCallback(() => {
@@ -374,7 +371,6 @@ function AdminPortalInner({ onError }: { onError: (e: Error) => void }) {
         </AnimatePresence>
       </main>
 
-      {/* Product Form Dialog */}
       <Dialog open={showProductForm} onOpenChange={(open) => { if (!open) { setShowProductForm(false); resetForm(); } }}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
